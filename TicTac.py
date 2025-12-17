@@ -54,7 +54,8 @@ def get_move():
 
 
 def is_valid_move(board, position):
-    if position[0] < 0 or position[0] >= board_width:
+    if position[0] >= board_width:
+        
         return False
     if position[1] < 0 or position[1] >= board_height:
         return False
@@ -101,26 +102,35 @@ def get_winner(board):
     return None
     
 
+def play(player1_f, player2_f):
+    players = [
+        ('X', player1_f),
+        ('O', player2_f)
+    ]
 
+    turn = 0
+    board = new_board()
+    while True:
+        current_player_id, current_player_f = players[turn % 2]
+        render(board)
 
+        move_coords = get_move()
+        make_move(current_player_id, board, move_coords)
 
-player = ['x','o']
-
-
-
-
-board = new_board()
-while not is_board_full(board) and get_winner(board) is None:
-    for i in range(2):
-        print("Player %s's turn" % player[i])
-        move_coords_1 = get_move()
-        if is_valid_move(board, move_coords_1):
-            make_move(board, move_coords_1, player[i])
-            render(board)
-        else:
-            print("Invalid move, try again.")
-        winner = get_winner(board)
+        winner = get_winner(board) 
         if winner is not None:
-                print("Player %s wins!" % winner)
-                break
-                
+            render(board)
+            print(f'The winner is {winner}!')
+            break
+
+        if is_board_full(board):
+            render(board)
+            print("It's a draw!")
+            break
+
+        turn += 1
+
+play('player1_f', 'player2_f')
+
+
+
