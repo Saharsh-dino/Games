@@ -1,8 +1,9 @@
 import Labels
+import os
 
-BOARD_HEIGHT = 6
-BOARD_WIDTH = 6
-WIN_CONDITION = 4
+BOARD_HEIGHT = 3
+BOARD_WIDTH = 3
+WIN_CONDITION = 3
 
 def new_board():
     board = []
@@ -25,6 +26,7 @@ def is_board_full(board):
 
 
 def render(board):
+    os.system('cls' if os.name == 'nt' else 'clear')
     rows = []
     for y in range(0, BOARD_HEIGHT):
         row = []
