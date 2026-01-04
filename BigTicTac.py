@@ -2,6 +2,8 @@ import Labels
 
 BOARD_HEIGHT = 3
 BOARD_WIDTH = 3
+WIN_CONDITION = 3
+
 
 def new_board():
     board = []
@@ -12,8 +14,9 @@ def new_board():
         board.append(column)
     return board
 
-def quit():
-    print("Thanks for playing!")
+
+def exit_game():
+    print("Thanks for playing! Goodbye!")
     exit()
 
 
@@ -24,45 +27,40 @@ def is_board_full(board):
 
 
 def render(board):
-    rows = []
-    for y in range(0, BOARD_HEIGHT):
+    print("\n    " + "   ".join(str(x) for x in range(BOARD_WIDTH)))
+    print("  " + "-" * (BOARD_WIDTH * 4 - 1))
+    for y in range(BOARD_HEIGHT):
         row = []
-        for x in range(0, BOARD_WIDTH):
-            row.append(board[x][y])
-        rows.append(row)
-    row_num = 0
-    print("  0 1 2")
-    print("  ------")
-    for row in rows:
-        output_row = '' 
-        for sq in row:
-            if sq is None:
-                output_row += ' '
-            else:
-                output_row += str(sq)
-        print("%d|%s|" % (row_num, ' '.join(output_row)))
-        row_num += 1
-    print("  ------")
+        for x in range(BOARD_WIDTH):
+            cell = board[x][y]
+            row.append(cell if cell is not None else " ")
+        print(f"{y} | " + " | ".join(row) + " |")
+        print("  " + "--" * (BOARD_WIDTH * 2))
 
 
 def get_move():
     position = []
     while True:
         try:
-         x = int(input("Enter X coordinate (0-2): "))
+            x = input(f"Enter X coordinate (0-{BOARD_WIDTH - 1}): ") 
+            if x == "quit".strip().lower():
+                end_game()
+            x = int(x)
         except ValueError:
             print(Labels.INVALID_INPUT_MESSAGE)
             continue
         try:
-            y = int(input("Enter Y coordinate (0-2): "))
+            y = input(f"Enter Y coordinate (0-{BOARD_HEIGHT - 1}): ")
+            if y == "quit".strip().lower():
+                end_game()
+            y = int(y)
         except ValueError:
             print(Labels.INVALID_INPUT_MESSAGE)
             continue
-        if x == 7 or y == 7:
-            quit()
         position.append(x)
         position.append(y)
         return position
+
 
 def is_valid_move(board, position):
     if position[0] < 0 or position[0] >= BOARD_WIDTH:
@@ -80,62 +78,107 @@ def make_move(board, position, player):
     board[position[0]][position[1]] = player
 
 
-def get_all_lines():
+def get_columns():
     cols = []
     for x in range(0, BOARD_WIDTH):
         col = []
         for y in range(0, BOARD_HEIGHT):
             col.append([x, y])
         cols.append(col)
+    return cols
 
+def get_rows():
     rows = []
     for y in range(0, BOARD_HEIGHT):
         row = []
         for x in range(0, BOARD_WIDTH):
             row.append([x, y])
         rows.append(row)
+    return rows
 
-    diagonals = [[[0, 0], [1, 1], [2, 2]],
-                 [[0, 2], [1, 1], [2, 0]]]
-    return cols + rows + diagonals
+
+def get_diagonals1():
+    diagonals1 = [] 
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            current_line1 = []
+            for step in range(0, WIN_CONDITION):
+                col = x + step
+                row = y + step
+                if col >= BOARD_WIDTH or row >= BOARD_HEIGHT:
+                    break
+                current_line1.append([col, row])
+            if len(current_line1) == WIN_CONDITION: 
+                diagonals1.append(current_line1)
+    return diagonals1
+
+
+def get_diagonals2():
+    diagonals2 = []
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            current_line2 = []
+            for step in range(0, WIN_CONDITION):
+                col = x - step
+                row = y + step
+                if col < 0 or row >= BOARD_HEIGHT:
+                    break
+                current_line2.append([col, row])
+            if len(current_line2) == WIN_CONDITION:
+                diagonals2.append(current_line2)
+    return diagonals2
 
 
 def get_winner(board):
-    all_lines = get_all_lines()
+    all_lines = get_columns() + get_rows() + get_diagonals1() + get_diagonals2() 
     for line in all_lines:
-        line_values = [board[x][y] for [x, y] in line]
-        if len(set(line_values)) == 1 and line_values[0] is not None:
+        line_values = [board[x][y] for x, y in line]
+        if line_values[0] != None and line_values.count(line_values[0]) == WIN_CONDITION:
             return line_values[0]
     return None
-    
+
+
+def end_game():
+    print("Thanks for playing!")
+    play_again = input("Would you like to play again? (yes/no): ").strip().lower()
+    if play_again == "yes":
+        play()
+    elif play_again == "no":
+        exit_game()
+    else:
+        print(Labels.INVALID_INPUT_MESSAGE)
+        end_game()
+
 
 def main_menu():
-    print("Welcome to Tic Tac Toe!")
-    print("To Start Playing, type 'play'")
-    print("To Quit, type 'quit'")
+    print("        Welcome to Tic Tac Toe!") 
+    print("To Start Playing,         type 'play'")
+    print("To Quit,                  type 'quit'")
     order = input("Enter your choice: ").strip().lower()
-    if order == 'play':
+    if order == "play": 
         play()
-    elif order == 'quit':
-        quit()
+    elif order == "quit":
+        end_game()
     else:
         print(Labels.INVALID_INPUT_MESSAGE)
         main_menu()
 
 
 def play():
-    players = ['X','O']
+    players = ["X", "O"]
     board = new_board()
     turn = 0
 
-    print("The board below is in the form of a 3x3 grid."
-          "Both rows and columns are numbered 0 to 2."
-          "Look carefully which box you want to enter your character and enter its x and y coords."
-           "To surrender, type the number 7")
+    print(f"The board below is in the form of a {BOARD_WIDTH}x{BOARD_HEIGHT} grid.")
+    print(f"Both rows and columns are numbered 0 to {BOARD_HEIGHT - 1}.")
+    print(
+        "Look carefully which box you want to enter your character and enter its x and y coords."
+    )
+    print("To surrender, type 'quit'") 
 
     while True:
         current_player = players[turn % 2]
-        print(' ')
+        print(" ")
         print(f"Player {current_player}'s turn")
         render(board)
 
@@ -144,23 +187,22 @@ def play():
             if not is_valid_move(board, move_coords):
                 print("Invalid move, try again.")
                 continue
-        except Exception:  
+        except Exception:
             print(Labels.INVALID_INPUT_MESSAGE)
-        
+
 
         make_move(board, move_coords, current_player)
 
         winner = get_winner(board)
         if winner:
             render(board)
-            print(f"The winner is {winner}")
-            break
+            print(f"The winner is {winner}!!")
+            end_game()
 
-        if (is_board_full(board)):
+        if is_board_full(board):
             print("It's a tie!")
-            break
-
+            end_game()
         turn += 1
 
-    
-main_menu()   
+
+main_menu()
