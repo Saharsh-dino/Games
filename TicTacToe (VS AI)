@@ -1,0 +1,247 @@
+import Labels
+import random
+import os
+
+BOARD_HEIGHT = 6
+BOARD_WIDTH = 6
+WIN_CONDITION = 4
+
+
+def new_board():
+    board = []
+    for x in range(0, BOARD_WIDTH):
+        column = []
+        for y in range(0, BOARD_HEIGHT):
+            column.append(None)
+        board.append(column)
+    return board
+
+
+def exit_game():
+    print("Thanks for playing! Goodbye!")
+    exit()
+
+
+def is_board_full(board):
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            if board[x][y] == None:
+                return False
+    return True 
+
+
+def render(board):
+    print("\n    " + "   ".join(str(x) for x in range(BOARD_WIDTH)))
+    print("  " + "-" * (BOARD_WIDTH * 4 - 1))
+    for y in range(BOARD_HEIGHT):
+        row = []
+        for x in range(BOARD_WIDTH):
+            cell = board[x][y]
+            row.append(cell if cell is not None else " ")
+        print(f"{y} | " + " | ".join(row) + " |")
+        print("  " + "--" * (BOARD_WIDTH * 2))
+
+
+def get_move():
+    position = []
+    while True:
+        try:
+            x = input(f"Enter X coordinate (0-{BOARD_WIDTH - 1}): ") 
+            if x == "quit".strip().lower():
+                end_game()
+            x = int(x)
+        except ValueError:
+            print(Labels.INVALID_INPUT_MESSAGE)
+            continue
+        try:
+            y = input(f"Enter Y coordinate (0-{BOARD_HEIGHT - 1}): ")
+            if y == "quit".strip().lower():
+                end_game()
+            y = int(y)
+        except ValueError:
+            print(Labels.INVALID_INPUT_MESSAGE)
+            continue
+        position.append(x)
+        position.append(y)
+        return position
+
+
+def is_valid_move(board, position):
+    if position[0] < 0 or position[0] >= BOARD_WIDTH:
+        return False
+    if position[1] < 0 or position[1] >= BOARD_HEIGHT:
+        return False
+    if board[position[0]][position[1]] is not None:
+        return False
+    return True
+
+
+def make_move(board, position, player):
+    if not is_valid_move(board, position):
+        raise Exception("Invalid move: ")
+    board[position[0]][position[1]] = player
+
+
+def get_columns():
+    cols = []
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            col = []
+            for step in range(0, WIN_CONDITION):
+                if y + step >= BOARD_HEIGHT:
+                    break
+                col.append([x, y + step])
+            if len(col) == WIN_CONDITION:
+                cols.append(col)
+    return cols
+
+
+def get_rows():
+    rows = []
+    for y in range(0, BOARD_HEIGHT):
+        for x in range(0, BOARD_WIDTH):
+            row = []
+            for step in range(0,WIN_CONDITION):
+                if x + step >= BOARD_WIDTH:
+                    break
+                row.append([x + step, y])
+            if len(row) == WIN_CONDITION:
+                rows.append(row)
+    return rows
+
+
+def get_diagonals1():
+    diagonals1 = [] 
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            current_line1 = []
+            for step in range(0, WIN_CONDITION):
+                col = x + step
+                row = y + step
+                if col >= BOARD_WIDTH or row >= BOARD_HEIGHT:
+                    break
+                current_line1.append([col, row])
+            if len(current_line1) == WIN_CONDITION: 
+                diagonals1.append(current_line1)
+    return diagonals1
+
+
+def get_diagonals2():
+    diagonals2 = []
+    for x in range(0, BOARD_WIDTH):
+        for y in range(0, BOARD_HEIGHT):
+            current_line2 = []
+            for step in range(0, WIN_CONDITION):
+                col = x - step
+                row = y + step
+                if col < 0 or row >= BOARD_HEIGHT:
+                    break
+                current_line2.append([col, row])
+            if len(current_line2) == WIN_CONDITION:
+                diagonals2.append(current_line2)
+    return diagonals2
+
+
+def get_winner(board):
+    all_lines = get_columns() + get_rows() + get_diagonals1() + get_diagonals2() 
+    for line in all_lines:
+        line_values = [board[x][y] for x, y in line]
+        if line_values[0] != None and line_values.count(line_values[0]) == WIN_CONDITION:
+            return line_values[0]
+    return None
+
+
+def end_game():
+    print("Thanks for playing!")
+    play_again = input("Would you like to play again? (yes/no): ").strip().lower()
+    if play_again == "yes":
+        play()
+    elif play_again == "no":
+        exit_game()
+    else:
+        print(Labels.INVALID_INPUT_MESSAGE)
+        end_game()
+
+
+def main_menu():
+    print("        Welcome to Tic Tac Toe!") 
+    print("To Start Playing,         type 'play'")
+    print("To Quit,                  type 'quit'")
+    order = input("Enter your choice: ").strip().lower()
+    if order == "play": 
+        play()
+    elif order == "quit":
+        end_game()
+    else:
+        print(Labels.INVALID_INPUT_MESSAGE)
+        main_menu()
+
+
+def random_ai(board):
+    while True:
+        x = random.randint(0, BOARD_WIDTH - 1)
+        y = random.randint(0, BOARD_HEIGHT - 1)
+        if board[x][y] == None:
+            return [x,y]
+        
+
+def finds_winning_move_ai(board, current_player):
+    opponent = 'X' if current_player == 'O' else 'O'
+    lines = get_columns() + get_rows() + get_diagonals1() + get_diagonals2()
+
+    for line in lines:
+        values = [board[x][y] for x, y in line]
+        if values.count(current_player) == WIN_CONDITION - 1 and values.count(None) == 1:
+            for x,y in line:
+                if board[x][y] == None:
+                    return [x,y]
+                
+    for line in lines:
+        values = [board[x][y] for x, y in line]            
+        if values.count(opponent) == WIN_CONDITION - 1 and values.count(None) == 1:
+            for x,y in line:
+                if board[x][y] == None:
+                    return [x,y]
+    return random_ai(board)
+
+
+def play():
+    players = ["x", "O"]
+    board = new_board()
+    turn = 0
+
+    print(f"The board below is in the form of a {BOARD_WIDTH}x{BOARD_HEIGHT} grid.")
+    print(f"Both rows and columns are numbered 0 to {BOARD_HEIGHT - 1}.")
+    print(
+        "Look carefully which box you want to enter your character and enter its x and y coords."
+    )
+    print("To surrender, type 'quit'") 
+
+    while True:
+        current_player = players[turn % 2]
+        print(" ")
+        render(board)
+        print(f"Player {current_player}'s turn")
+        try:
+            move_coords = finds_winning_move_ai(board, current_player) if current_player == 'O' else get_move()
+            if not is_valid_move(board, move_coords):
+                print("Invalid move, try again.")
+                continue
+        except Exception:
+            print(Labels.INVALID_INPUT_MESSAGE)
+        os.system('cls' if os.name == 'nt' else 'clear')
+        make_move(board, move_coords, current_player)
+
+        winner = get_winner(board)
+        if winner:
+            render(board)
+            print(f"The winner is {winner}!!")
+            end_game()
+
+        if is_board_full(board):
+            print("It's a tie!")
+            end_game()
+        turn += 1
+
+
+main_menu()
